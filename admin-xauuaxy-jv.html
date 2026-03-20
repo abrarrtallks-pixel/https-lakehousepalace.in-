@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel — Lake View Resort</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --green:     #2e8b57;
+      --dark:      #0d3320;
+      --mid:       #1a5c38;
+      --light:     #3aaf72;
+      --pale:      #e8f5ed;
+      --frost:     #f4faf6;
+      --bg:        #f0f4f2;
+      --white:     #fff;
+      --border:    #c8ddd2;
+      --muted:     #7a9186;
+      --soft:      #4b5e55;
+      --red:       #ef4444;
+      --red-dark:  #dc2626;
+      --shadow:    0 4px 20px rgba(0,0,0,.1);
+      --radius:    12px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--dark);
+      min-height: 100vh;
+    }
+
+    /* ────── TYPOGRAPHY ────── */
+    h1, h2, h3 { font-family: 'Playfair Display', serif; }
+
+    /* ────── INPUTS ────── */
+    .field { margin-bottom: 18px; }
+    .field label {
+      display: block;
+      font-size: .78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--soft);
+      margin-bottom: 6px;
+    }
+    .field input[type="text"],
+    .field input[type="email"],
+    .field input[type="password"] {
+      width: 100%;
+      padding: 11px 15px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-family: 'Inter', sans-serif;
+      font-size: .95rem;
+      color: var(--dark);
+      background: var(--white);
+      outline: none;
+      transition: border .2s, box-shadow .2s;
+    }
+    .field input:focus {
+      border-color: var(--light);
+      box-shadow: 0 0 0 3px rgba(58,175,114,.18);
+    }
+
+    /* ────── BUTTONS ────── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 11px 22px;
+      border: none;
+      border-radius: 8px;
+      font-family: 'Inter', sans-serif;
+      font-size: .88rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .18s;
+    }
+    .btn:disabled { opacity: .5; cursor: not-allowed !important; transform: none !important; }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--light), var(--green));
+      color: #fff;
+      box-shadow: 0 3px 10px rgba(46,139,87,.3);
+      width: 100%;
+      justify-content: center;
+      padding: 13px;
+    }
+    .btn-primary:hover:not(:disabled) { filter: brightness(1.08); transform: translateY(-1px); }
+    .btn-outline {
+      background: transparent;
+      color: var(--green);
+      border: 2px solid var(--green);
+    }
+    .btn-outline:hover { background: var(--pale); }
+    .btn-danger {
+      background: var(--red);
+      color: #fff;
+    }
+    .btn-danger:hover { background: var(--red-dark); transform: translateY(-1px); }
+    .btn-sm { padding: 7px 13px; font-size: .78rem; }
+    .btn-full { width: 100%; justify-content: center; }
+
+    /* ────── ALERTS ────── */
+    .alert {
+      display: none;
+      align-items: center;
+      gap: 9px;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: .86rem;
+      margin-bottom: 18px;
+    }
+    .alert.show { display: flex; }
+    .alert-ok  { background: var(--pale);   color: var(--mid); border: 1px solid #9fcfb3; }
+    .alert-err { background: #fee2e2;       color: #b91c1c;    border: 1px solid #fca5a5; }
+    .alert-warn{ background: #fff4e6;       color: #b45309;    border: 1px solid #fcd34d; }
+
+    /* ────── PAGE WRAPPER ────── */
+    .wrap { padding: 36px 20px; max-width: 1200px; margin: 0 auto; }
+
+    /* ────── LOGIN BOX ────── */
+    #loginBox {
+      max-width: 420px;
+      margin: 70px auto;
+      background: var(--white);
+      border-radius: 18px;
+      padding: 44px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+    }
+    #loginBox .icon { font-size: 3rem; margin-bottom: 12px; }
+    #loginBox h2 { font-size: 1.7rem; color: var(--dark); margin-bottom: 4px; }
+    #loginBox .sub { color: var(--muted); font-size: .88rem; margin-bottom: 28px; }
+
+    /* ────── ADMIN PANEL ────── */
+    #adminPanel { display: none; }
+    #adminPanel.on { display: block; }
+
+    /* Header bar */
+    .top-bar {
+      background: linear-gradient(135deg, var(--dark) 0%, var(--mid) 100%);
+      border-radius: 16px;
+      padding: 28px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow);
+    }
+    .top-bar h1 { color: #fff; font-size: 1.8rem; margin-bottom: 3px; }
+    .top-bar p  { color: rgba(255,255,255,.68); font-size: .85rem; }
+    .btn-logout {
+      background: rgba(255,255,255,.15);
+      color: #fff;
+      border: 1.5px solid rgba(255,255,255,.35);
+      padding: 9px 18px;
+      border-radius: 8px;
+      font-family: 'Inter', sans-serif;
+      font-size: .82rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-logout:hover { background: rgba(255,255,255,.25); }
+
+    /* Cards */
+    .card {
+      background: var(--white);
+      border-radius: 16px;
+      padding: 28px 30px;
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 12px rgba(0,0,0,.06);
+      margin-bottom: 24px;
+    }
+    .card h2 {
+      font-size: 1.25rem;
+      color: var(--dark);
+      margin-bottom: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    /* Stats */
+    .stats { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 22px; }
+    .stat {
+      flex: 1; min-width: 120px;
+      background: var(--frost);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 18px;
+    }
+    .stat-label { font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin-bottom: 5px; }
+    .stat-val   { font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 700; color: var(--green); }
+
+    /* Upload zone */
+    .drop-zone {
+      border: 2.5px dashed #9fcfb3;
+      border-radius: 12px;
+      padding: 48px 24px;
+      text-align: center;
+      background: var(--frost);
+      cursor: pointer;
+      transition: all .2s;
+      margin-bottom: 18px;
+    }
+    .drop-zone:hover, .drop-zone.over {
+      border-color: var(--light);
+      background: var(--pale);
+      border-style: solid;
+    }
+    .drop-zone .dz-icon { font-size: 3rem; display: block; margin-bottom: 12px; }
+    .drop-zone h3 { font-size: 1.15rem; color: var(--dark); margin-bottom: 6px; }
+    .drop-zone p  { font-size: .82rem; color: var(--muted); }
+
+    /* File preview strip */
+    .preview-strip {
+      display: none;
+      align-items: center;
+      gap: 14px;
+      padding: 14px;
+      background: var(--pale);
+      border: 1px solid #9fcfb3;
+      border-radius: 10px;
+      margin-bottom: 16px;
+    }
+    .preview-strip.show { display: flex; }
+    .preview-strip img  { width: 72px; height: 72px; object-fit: cover; border-radius: 8px; border: 2px solid var(--light); }
+    .pname { font-weight: 600; font-size: .88rem; color: var(--dark); }
+    .psize { font-size: .76rem; color: var(--muted); }
+
+    /* Progress */
+    .progress { display: none; height: 7px; background: var(--pale); border-radius: 10px; overflow: hidden; margin: 14px 0; }
+    .progress.show { display: block; }
+    .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--light), #6fcf97); transition: width .35s ease; }
+
+    /* Gallery grid */
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 18px;
+    }
+
+    .gcard {
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1.5px solid var(--border);
+      background: var(--white);
+      transition: all .2s;
+    }
+    .gcard:hover { box-shadow: 0 6px 20px rgba(0,0,0,.12); border-color: #9fcfb3; transform: translateY(-3px); }
+    .gcard img   { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; }
+    .gcard-body  { padding: 9px 12px; }
+    .gcard-cap   { font-size: .8rem; color: var(--soft); font-style: italic; min-height: 28px; }
+    .gcard-meta  { font-size: .7rem; color: var(--muted); margin-top: 3px; }
+    .gcard-foot  { padding: 8px 10px; background: var(--frost); border-top: 1px solid var(--border); }
+
+    /* Empty / loading states */
+    .empty {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 48px;
+      color: var(--muted);
+    }
+    .empty .e-icon { font-size: 2.8rem; margin-bottom: 10px; }
+
+    /* Loading overlay */
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(13,51,32,.8);
+      backdrop-filter: blur(4px);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+    }
+    .overlay.show { display: flex; }
+    .overlay-box  { text-align: center; color: #fff; }
+    .spinner { font-size: 2.8rem; display: block; margin-bottom: 10px; animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media (max-width: 560px) {
+      #loginBox { padding: 28px 22px; margin: 40px auto; }
+      .card { padding: 20px 18px; }
+      .top-bar { padding: 22px 18px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════
+     LOGIN
+════════════════════════════════════════════ -->
+<div class="wrap">
+  <div id="loginBox">
+    <div class="icon">🌲</div>
+    <h2>Admin Login</h2>
+    <p class="sub">Lake View Resort — Gallery Manager</p>
+
+    <div id="loginAlert" class="alert"></div>
+
+    <form id="loginForm" autocomplete="on">
+      <div class="field">
+        <label for="email">Email</label>
+        <input type="email" id="email" placeholder="your@email.com" required autocomplete="email" />
+      </div>
+      <div class="field">
+        <label for="pass">Password</label>
+        <input type="password" id="pass" placeholder="••••••••" required autocomplete="current-password" />
+      </div>
+      <button type="submit" class="btn btn-primary" id="loginBtn">🔓 Login</button>
+    </form>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════
+       ADMIN PANEL
+  ════════════════════════════════════════════ -->
+  <div id="adminPanel">
+
+    <div class="top-bar">
+      <div>
+        <h1>📸 Gallery Manager</h1>
+        <p>Lake View Resort · Google Drive Connected</p>
+      </div>
+      <button class="btn-logout" onclick="doLogout()">🚪 Logout</button>
+    </div>
+
+    <!-- Upload Card -->
+    <div class="card">
+      <h2>📤 Upload Image</h2>
+
+      <div id="uploadAlert" class="alert"></div>
+
+      <div class="drop-zone" id="dropZone">
+        <span class="dz-icon">☁️</span>
+        <h3>Click to browse or drag & drop</h3>
+        <p>JPG · PNG · WebP · GIF &nbsp;·&nbsp; Max 5 MB per image</p>
+        <input type="file" id="fileInput" accept="image/*" style="display:none" multiple />
+      </div>
+
+      <div class="preview-strip" id="previewStrip">
+        <img id="previewImg" src="" alt="Preview" />
+        <div>
+          <p class="pname" id="previewName"></p>
+          <p class="psize" id="previewSize"></p>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="caption">Caption (optional)</label>
+        <input type="text" id="caption" placeholder="e.g. Sunset view from the lake deck" />
+      </div>
+
+      <div class="progress" id="progressBar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+
+      <button class="btn btn-primary" id="uploadBtn" disabled>📤 Upload to Gallery</button>
+    </div>
+
+    <!-- Gallery Card -->
+    <div class="card">
+      <h2>
+        🖼️ Current Gallery
+        <button class="btn btn-outline btn-sm" onclick="loadGallery()">🔄 Refresh</button>
+      </h2>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-label">Total Images</div>
+          <div class="stat-val" id="statCount">—</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Storage Used</div>
+          <div class="stat-val" id="statSize">—</div>
+        </div>
+      </div>
+
+      <div class="gallery-grid" id="galleryGrid">
+        <div class="empty"><div class="e-icon">📸</div><p>Login to load gallery</p></div>
+      </div>
+    </div>
+
+  </div><!-- /adminPanel -->
+</div><!-- /wrap -->
+
+<!-- Loading overlay -->
+<div class="overlay" id="overlay">
+  <div class="overlay-box">
+    <span class="spinner">⏳</span>
+    <p>Processing…</p>
+  </div>
+</div>
+
+
+<script>
+// ════════════════════════════════════════════════════
+//  ✅  PASTE YOUR DEPLOYED APPS SCRIPT URL BELOW
+// ════════════════════════════════════════════════════
+var API = 'https://script.google.com/macros/s/AKfycbxWFUPqVCfRG_-EBuGGczU-cynSt7o-MGx0ujP4mdNGbrnmLse17GNKkvXHUyLkGnryJA/exec';
+// Example:
+// var API = 'https://script.google.com/macros/s/AKfycb.../exec';
+// ════════════════════════════════════════════════════
+
+var creds       = null;   // { email, pass }
+var pendingFile = null;   // File object selected by user
+
+// ── DOM ──────────────────────────────────────────────
+var loginBox    = document.getElementById('loginBox');
+var adminPanel  = document.getElementById('adminPanel');
+var loginForm   = document.getElementById('loginForm');
+var dropZone    = document.getElementById('dropZone');
+var fileInput   = document.getElementById('fileInput');
+var uploadBtn   = document.getElementById('uploadBtn');
+var previewStrip= document.getElementById('previewStrip');
+var progressBar = document.getElementById('progressBar');
+var progressFill= document.getElementById('progressFill');
+var galleryGrid = document.getElementById('galleryGrid');
+var overlay     = document.getElementById('overlay');
+
+
+// ── API CALL (GET only — avoids CORS preflight) ──────
+function call(params) {
+  var url = API + '?' + new URLSearchParams(params).toString();
+  return fetch(url, { redirect: 'follow' })
+    .then(function(r){ return r.json(); });
+}
+
+// POST — for upload (large body)
+function post(body) {
+  return fetch(API, {
+    method: 'POST',
+    redirect: 'follow',
+    body: JSON.stringify(body)
+  }).then(function(r){ return r.json(); });
+}
+
+
+// ── LOGIN ─────────────────────────────────────────────
+loginForm.addEventListener('submit', function(e) {
+  e.preventDefault();
+  var email = document.getElementById('email').value.trim();
+  var pass  = document.getElementById('pass').value;
+
+  if (!email || !pass) return;
+
+  showAlert('loginAlert', '⏳ Checking credentials…', 'warn');
+  document.getElementById('loginBtn').disabled = true;
+
+  call({ action: 'login', email: email, pass: pass })
+    .then(function(res) {
+      if (res.success) {
+        creds = { email: email, pass: pass };
+        showAlert('loginAlert', '✅ Login successful!', 'ok');
+        setTimeout(function() {
+          loginBox.style.display = 'none';
+          adminPanel.classList.add('on');
+          loadGallery();
+        }, 500);
+      } else {
+        showAlert('loginAlert', '❌ ' + (res.message || 'Wrong email or password'), 'err');
+        document.getElementById('loginBtn').disabled = false;
+      }
+    })
+    .catch(function(err) {
+      showAlert('loginAlert', '❌ Cannot reach server. Check your Apps Script URL.', 'err');
+      console.error(err);
+      document.getElementById('loginBtn').disabled = false;
+    });
+});
+
+
+// ── LOGOUT ────────────────────────────────────────────
+window.doLogout = function() {
+  if (!confirm('Log out of admin panel?')) return;
+  creds = null;
+  adminPanel.classList.remove('on');
+  loginBox.style.display = '';
+  document.getElementById('email').value = '';
+  document.getElementById('pass').value  = '';
+  document.getElementById('loginBtn').disabled = false;
+};
+
+
+// ── FILE SELECTION ────────────────────────────────────
+dropZone.addEventListener('click', function() { fileInput.click(); });
+
+fileInput.addEventListener('change', function(e) {
+  if (e.target.files.length) selectFile(e.target.files[0]);
+});
+
+dropZone.addEventListener('dragover', function(e) {
+  e.preventDefault(); dropZone.classList.add('over');
+});
+dropZone.addEventListener('dragleave', function() {
+  dropZone.classList.remove('over');
+});
+dropZone.addEventListener('drop', function(e) {
+  e.preventDefault(); dropZone.classList.remove('over');
+  if (e.dataTransfer.files.length) selectFile(e.dataTransfer.files[0]);
+});
+
+function selectFile(file) {
+  var allowed = ['image/jpeg','image/png','image/gif','image/webp'];
+  if (!allowed.includes(file.type)) {
+    showAlert('uploadAlert', '❌ Please choose a JPG, PNG, WebP or GIF file.', 'err');
+    return;
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    showAlert('uploadAlert', '❌ File is larger than 5 MB.', 'err');
+    return;
+  }
+
+  pendingFile = file;
+  uploadBtn.disabled = false;
+
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    document.getElementById('previewImg').src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+
+  document.getElementById('previewName').textContent = file.name;
+  document.getElementById('previewSize').textContent = fmtBytes(file.size);
+  previewStrip.classList.add('show');
+
+  dropZone.querySelector('h3').textContent = '✅ ' + file.name;
+  dropZone.querySelector('p').textContent  = 'Click Upload below to add to gallery';
+  showAlert('uploadAlert', 'Ready: ' + file.name + ' (' + fmtBytes(file.size) + ')', 'ok');
+}
+
+
+// ── UPLOAD ────────────────────────────────────────────
+uploadBtn.addEventListener('click', function() {
+  if (!pendingFile || !creds) return;
+
+  uploadBtn.disabled = true;
+  uploadBtn.textContent = '⏳ Uploading…';
+  progressBar.classList.add('show');
+  progressFill.style.width = '0%';
+
+  var caption = document.getElementById('caption').value.trim();
+
+  // Read file as base64
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    progressFill.style.width = '30%';
+
+    post({
+      action:    'upload',
+      email:     creds.email,
+      pass:      creds.pass,
+      imageData: ev.target.result,
+      fileName:  pendingFile.name,
+      caption:   caption
+    })
+    .then(function(res) {
+      progressFill.style.width = '100%';
+
+      if (res.success) {
+        showAlert('uploadAlert', '✅ Image uploaded to Google Drive!', 'ok');
+        resetUpload();
+        setTimeout(function() {
+          progressBar.classList.remove('show');
+          loadGallery();
+        }, 700);
+      } else {
+        showAlert('uploadAlert', '❌ Upload failed: ' + (res.message||'unknown error'), 'err');
+        progressBar.classList.remove('show');
+      }
+    })
+    .catch(function(err) {
+      showAlert('uploadAlert', '❌ Network error: ' + err.message, 'err');
+      progressBar.classList.remove('show');
+    })
+    .finally(function() {
+      uploadBtn.disabled = false;
+      uploadBtn.innerHTML = '📤 Upload to Gallery';
+    });
+  };
+
+  reader.readAsDataURL(pendingFile);
+});
+
+function resetUpload() {
+  pendingFile = null;
+  fileInput.value = '';
+  document.getElementById('caption').value = '';
+  previewStrip.classList.remove('show');
+  document.getElementById('previewImg').src = '';
+  dropZone.querySelector('h3').textContent = 'Click to browse or drag & drop';
+  dropZone.querySelector('p').textContent  = 'JPG · PNG · WebP · GIF · Max 5 MB';
+  uploadBtn.disabled = true;
+}
+
+
+// ── LOAD GALLERY ──────────────────────────────────────
+window.loadGallery = function() {
+  galleryGrid.innerHTML = '<div class="empty"><div class="e-icon">🔄</div><p>Loading…</p></div>';
+
+  call({ action: 'getImages' })
+    .then(function(res) {
+      if (!res.success) {
+        galleryGrid.innerHTML = '<div class="empty"><div class="e-icon">❌</div><p>' + (res.message||'Error loading gallery') + '</p></div>';
+        return;
+      }
+
+      var imgs = (res.data && res.data.images) ? res.data.images : [];
+      document.getElementById('statCount').textContent = imgs.length;
+      document.getElementById('statSize').textContent  = fmtBytes(
+        imgs.reduce(function(s,i){ return s + (i.size||0); }, 0)
+      );
+
+      if (!imgs.length) {
+        galleryGrid.innerHTML = '<div class="empty"><div class="e-icon">📸</div><p>No images yet. Upload your first one!</p></div>';
+        return;
+      }
+
+      galleryGrid.innerHTML = '';
+      imgs.forEach(function(img) { galleryGrid.appendChild(makeCard(img)); });
+    })
+    .catch(function(err) {
+      galleryGrid.innerHTML = '<div class="empty"><div class="e-icon">❌</div><p>Connection error: ' + err.message + '</p></div>';
+    });
+};
+
+
+// ── BUILD GALLERY CARD ────────────────────────────────
+function makeCard(img) {
+  var div = document.createElement('div');
+  div.className = 'gcard';
+  div.innerHTML =
+    '<img src="' + esc(img.thumbnail) + '" alt="' + esc(img.caption||img.name) + '" loading="lazy" ' +
+         'onerror="this.onerror=null;this.src=\'' + esc(img.url) + '\'" />' +
+    '<div class="gcard-body">' +
+      '<p class="gcard-cap">' + (img.caption ? esc(img.caption) : '<em style="color:#aaa">No caption</em>') + '</p>' +
+      '<p class="gcard-meta">' + fmtBytes(img.size) + '</p>' +
+    '</div>' +
+    '<div class="gcard-foot">' +
+      '<button class="btn btn-danger btn-sm btn-full" onclick="deleteImg(\'' + img.id + '\',\'' + esc(img.name) + '\')">🗑️ Delete</button>' +
+    '</div>';
+  return div;
+}
+
+
+// ── DELETE ────────────────────────────────────────────
+window.deleteImg = function(id, name) {
+  if (!confirm('Delete "' + name + '"?\n\nThis moves it to Google Drive trash.')) return;
+  if (!creds) { alert('Please login first.'); return; }
+
+  overlay.classList.add('show');
+
+  call({ action: 'delete', email: creds.email, pass: creds.pass, imageId: id })
+    .then(function(res) {
+      overlay.classList.remove('show');
+      if (res.success) {
+        showAlert('uploadAlert', '✅ Image deleted.', 'ok');
+        loadGallery();
+      } else {
+        alert('Delete failed: ' + (res.message||'unknown error'));
+      }
+    })
+    .catch(function(err) {
+      overlay.classList.remove('show');
+      alert('Error: ' + err.message);
+    });
+};
+
+
+// ── HELPERS ───────────────────────────────────────────
+function showAlert(id, msg, type) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.className = 'alert alert-' + type + ' show';
+  el.textContent = msg;
+  clearTimeout(el._t);
+  el._t = setTimeout(function(){ el.classList.remove('show'); }, 6000);
+}
+
+function fmtBytes(b) {
+  if (!b) return '0 B';
+  var k = 1024, s = ['B','KB','MB','GB'];
+  var i = Math.min(Math.floor(Math.log(b)/Math.log(k)), s.length-1);
+  return parseFloat((b/Math.pow(k,i)).toFixed(1)) + ' ' + s[i];
+}
+
+function esc(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Debug - Apps Script Connection Test</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .test-card {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h1 { color: #1a7a42; margin-bottom: 8px; }
+    h2 { color: #0f4c2a; margin-bottom: 16px; font-size: 1.2rem; }
+    .status { padding: 12px; border-radius: 8px; margin: 12px 0; }
+    .status.loading { background: #fff4e6; color: #c2410c; }
+    .status.success { background: #d4f5e2; color: #0f4c2a; }
+    .status.error { background: #fee; color: #c00; }
+    input, button {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      margin: 8px 0;
+      border: 2px solid #d4f5e2;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    button {
+      background: #1a7a42;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    button:hover { background: #0f4c2a; }
+    code {
+      background: #f0f0f0;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: monospace;
+    }
+    pre {
+      background: #f0f0f0;
+      padding: 12px;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+
+<h1>🔍 Apps Script Connection Debugger</h1>
+<p>This page will help you diagnose login issues.</p>
+
+<!-- Test 1: URL Configuration -->
+<div class="test-card">
+  <h2>Test 1: Check Apps Script URL</h2>
+  <input type="text" id="testUrl" placeholder="Paste your Apps Script URL here" />
+  <button onclick="testUrlFormat()">Test URL Format</button>
+  <div id="urlStatus"></div>
+</div>
+
+<!-- Test 2: API Connection -->
+<div class="test-card">
+  <h2>Test 2: Test API Connection</h2>
+  <p>This will call your Apps Script to check if it's accessible.</p>
+  <button onclick="testConnection()">Test Connection</button>
+  <div id="connectionStatus"></div>
+</div>
+
+<!-- Test 3: Login Test -->
+<div class="test-card">
+  <h2>Test 3: Test Login Credentials</h2>
+  <input type="email" id="testEmail" placeholder="Email from Code.gs" />
+  <input type="password" id="testPassword" placeholder="Password from Code.gs" />
+  <button onclick="testLogin()">Test Login</button>
+  <div id="loginStatus"></div>
+</div>
+
+<!-- Test 4: Check Code.gs Values -->
+<div class="test-card">
+  <h2>✅ Checklist - Verify These in Your Code.gs:</h2>
+  <pre>Line 13: const ADMIN_EMAIL = 'your_email@example.com';  ← Did you change this?
+Line 18: const GALLERY_FOLDER_ID = 'YOUR_FOLDER_ID';     ← Did you paste folder ID?
+Line 21: const ADMIN_PASSWORD = 'your_password';         ← Did you change this?</pre>
+  
+  <p><strong>Common Mistakes:</strong></p>
+  <ul>
+    <li>Email/password in Code.gs has extra spaces</li>
+    <li>Forgot to click <strong>💾 Save</strong> after editing Code.gs</li>
+    <li>Didn't <strong>Deploy</strong> after saving (Deploy → New Deployment)</li>
+    <li>Used old deployment URL (should redeploy after changes)</li>
+    <li>Email is case-sensitive (must match exactly)</li>
+  </ul>
+</div>
+
+<!-- Results -->
+<div class="test-card">
+  <h2>📊 Full Debug Log</h2>
+  <div id="debugLog" style="min-height: 100px; background: #f9f9f9; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 12px;"></div>
+</div>
+
+<script>
+let SCRIPT_URL = '';
+
+function log(message, type = 'info') {
+  const logDiv = document.getElementById('debugLog');
+  const timestamp = new Date().toLocaleTimeString();
+  const prefix = type === 'error' ? '❌' : type === 'success' ? '✅' : 'ℹ️';
+  logDiv.innerHTML += `[${timestamp}] ${prefix} ${message}\n`;
+  logDiv.scrollTop = logDiv.scrollHeight;
+}
+
+// Test 1: URL Format
+function testUrlFormat() {
+  const url = document.getElementById('testUrl').value.trim();
+  const status = document.getElementById('urlStatus');
+  
+  if (!url) {
+    status.className = 'status error';
+    status.innerHTML = '❌ Please paste your Apps Script URL';
+    log('URL test failed: No URL provided', 'error');
+    return;
+  }
+  
+  SCRIPT_URL = url;
+  
+  // Check format
+  if (!url.includes('script.google.com/macros/s/')) {
+    status.className = 'status error';
+    status.innerHTML = '❌ Invalid URL format. Should look like:<br><code>https://script.google.com/macros/s/AKfycb.../exec</code>';
+    log('URL test failed: Invalid format', 'error');
+    return;
+  }
+  
+  if (!url.endsWith('/exec')) {
+    status.className = 'status error';
+    status.innerHTML = '⚠️ URL should end with <code>/exec</code><br>Make sure you copied the Web App URL, not the script URL.';
+    log('URL test warning: Missing /exec', 'error');
+    return;
+  }
+  
+  status.className = 'status success';
+  status.innerHTML = '✅ URL format looks correct!<br><code>' + url + '</code>';
+  log('URL test passed: ' + url, 'success');
+}
+
+// Test 2: Connection
+async function testConnection() {
+  const status = document.getElementById('connectionStatus');
+  
+  if (!SCRIPT_URL) {
+    status.className = 'status error';
+    status.innerHTML = '❌ Please test your URL first (Test 1)';
+    return;
+  }
+  
+  status.className = 'status loading';
+  status.innerHTML = '⏳ Connecting to Apps Script...';
+  log('Testing connection to: ' + SCRIPT_URL);
+  
+  try {
+    const response = await fetch(`${SCRIPT_URL}?action=getImages`);
+    log('Response status: ' + response.status);
+    
+    const text = await response.text();
+    log('Response text: ' + text.substring(0, 200));
+    
+    const result = JSON.parse(text);
+    
+    if (result.success !== undefined) {
+      status.className = 'status success';
+      status.innerHTML = '✅ Connection successful!<br>Apps Script is responding correctly.';
+      log('Connection test passed', 'success');
+    } else {
+      status.className = 'status error';
+      status.innerHTML = '⚠️ Connected but unexpected response:<br><pre>' + JSON.stringify(result, null, 2) + '</pre>';
+      log('Connection test: Unexpected response format', 'error');
+    }
+    
+  } catch (error) {
+    status.className = 'status error';
+    status.innerHTML = '❌ Connection failed: ' + error.message + '<br><br>Possible causes:<br>1. Wrong URL<br>2. Script not deployed<br>3. Deploy permission not set to "Anyone"';
+    log('Connection test failed: ' + error.message, 'error');
+  }
+}
+
+// Test 3: Login
+async function testLogin() {
+  const status = document.getElementById('loginStatus');
+  const email = document.getElementById('testEmail').value.trim();
+  const password = document.getElementById('testPassword').value;
+  
+  if (!SCRIPT_URL) {
+    status.className = 'status error';
+    status.innerHTML = '❌ Please test your URL first (Test 1)';
+    return;
+  }
+  
+  if (!email || !password) {
+    status.className = 'status error';
+    status.innerHTML = '❌ Please enter both email and password';
+    return;
+  }
+  
+  status.className = 'status loading';
+  status.innerHTML = '⏳ Testing credentials...';
+  log('Testing login with email: ' + email);
+  
+  try {
+    const response = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'getImages',
+        email: email,
+        password: password
+      })
+    });
+    
+    log('Login response status: ' + response.status);
+    
+    const text = await response.text();
+    log('Login response: ' + text.substring(0, 500));
+    
+    const result = JSON.parse(text);
+    
+    if (result.success) {
+      status.className = 'status success';
+      status.innerHTML = '✅ LOGIN SUCCESSFUL!<br>Your credentials are correct.<br>Images found: ' + (result.data?.images?.length || 0);
+      log('Login test PASSED ✅', 'success');
+      log('Your admin panel should work now!', 'success');
+    } else {
+      status.className = 'status error';
+      status.innerHTML = '❌ Login FAILED: ' + result.message + '<br><br><strong>Debug Info:</strong><br>';
+      
+      // Detailed debugging
+      status.innerHTML += '<ul style="text-align:left;margin-top:8px;">';
+      status.innerHTML += '<li>Email you entered: <code>' + email + '</code></li>';
+      status.innerHTML += '<li>Check Code.gs line 13: <code>const ADMIN_EMAIL</code></li>';
+      status.innerHTML += '<li>Make sure email matches EXACTLY (case-sensitive)</li>';
+      status.innerHTML += '<li>Make sure no extra spaces in Code.gs</li>';
+      status.innerHTML += '<li>After editing Code.gs, did you:<br>→ Click <strong>💾 Save</strong><br>→ Click <strong>Deploy → Manage Deployments</strong><br>→ Click <strong>✏️ Edit</strong><br>→ Change version to <strong>New Version</strong><br>→ Click <strong>Deploy</strong></li>';
+      status.innerHTML += '</ul>';
+      
+      log('Login test FAILED ❌', 'error');
+      log('Email: ' + email, 'error');
+      log('Error: ' + result.message, 'error');
+    }
+    
+  } catch (error) {
+    status.className = 'status error';
+    status.innerHTML = '❌ Error: ' + error.message;
+    log('Login test error: ' + error.message, 'error');
+  }
+}
+
+// Auto-fill URL if in localStorage
+window.onload = function() {
+  log('Debug page loaded');
+  log('Ready to test your Apps Script connection');
+};
+</script>
+
+</body>
+</html>

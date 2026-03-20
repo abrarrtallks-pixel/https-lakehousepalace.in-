@@ -1,0 +1,48 @@
+# robots.txt for Lake View Palace (lakehousepalace.in)
+
+# Allow all search engines to crawl the site
+User-agent: *
+Allow: /
+
+# Block admin panel (keep it private)
+Disallow: /admin.html
+Disallow: /debug.html
+
+# Block test/temporary files
+Disallow: /test/
+Disallow: /temp/
+Disallow: /*.gs$
+
+# Allow important pages
+Allow: /index.html
+Allow: /rooms.html
+Allow: /menu.html
+Allow: /gallery.html
+Allow: /about.html
+Allow: /contact.html
+
+# Allow CSS and JS files
+Allow: /css/
+Allow: /js/
+Allow: /images/
+
+# Sitemap location
+Sitemap: https://lakehousepalace.in/sitemap.xml
+
+# Crawl-delay (optional, helps with server load)
+# Crawl-delay: 1
+
+# Specific rules for Google
+User-agent: Googlebot
+Allow: /
+
+# Specific rules for Bing
+User-agent: Bingbot
+Allow: /
+
+# Block bad bots (optional)
+User-agent: AhrefsBot
+Crawl-delay: 10
+
+User-agent: SemrushBot
+Crawl-delay: 10
