@@ -16,7 +16,6 @@ Disallow: /*.gs$
 # Allow important pages
 Allow: /index.html
 Allow: /rooms.html
-Allow: /menu.html
 Allow: /gallery.html
 Allow: /about.html
 Allow: /contact.html
